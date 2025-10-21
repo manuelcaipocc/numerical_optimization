@@ -11,49 +11,151 @@ c_r = rand(2,1)*10;
 r_r = rand(1,1)*10;
 ang = rand(m,1)*2*pi;
 dev = rand(m,1)*0.2+0.9;
+
+
+fprintf("Numer of points: %d \n",m);
+fprintf('Center [x y]: [');
+for i = 1:length(c_r)
+    fprintf('%.2f ', c_r(i));
+end
+fprintf("]\n");
+
+fprintf('Radius: %2f \n',r_r);
+
+fprintf('Dev(i)*Radius: \n');
+for i = 1:length(dev)
+    fprintf('%.2f ', dev(i)*r_r);
+end
+fprintf("\n");
+
+fprintf('Angle of position(i)\n');
+for i = 1:length(ang)
+    fprintf('%.2f ', ang(i));
+end
+fprintf("\n");
+
 x = c_r(1)+r_r*cos(ang).*dev;
 y = c_r(2)+r_r*sin(ang).*dev;
 
 % set up function handles F and dF; z(1) = x_c, z(2) = y_c, z(3) = r
-F = @(z) ...
-dF = @(z) ...
+F  = @(z) (x - z(1)).^2 + (y - z(2)).^2 - z(3).^2;
+
+% Jacobian (m×3): each row = [-2(x_i - x_c), -2(y_i - y_c), -2r]
+dF = @(z) [-2*(x - z(1)), -2*(y - z(2)), -2*z(3)*ones(m,1)];
+
 
 % set inputs for Gauss-Newton method
 x0 = [5;5;5];
 tol = 10^(-10);
 maxit = 100;
 
-% perform Gauss-Newton method
-sol = gauss_newton(x0, F, dF, tol, maxit);
-sol = sol(:,end);
-x_c = sol(1);
-y_c = sol(2);
-r = sol(3);
+test=3;
+i=0;
+while i<test
+    fprintf("solution:  %d \n",i);
+    x0 = [1;1;1];
 
-% plot data points and computed circle
-figure();
-x_circ = x_c + r * cos(linspace(0,2*pi,100));
-y_circ = y_c + r * sin(linspace(0,2*pi,100));
-plot(x,y,'*red');
-hold on;
-plot(x_circ,y_circ,'blue');
-xlim([x_c-r-0.5, x_c+r+0.5]);
-ylim([y_c-r-0.5, y_c+r+0.5]);
-legend('data points', 'minimizing circle', 'Interpreter', 'latex');
+    % perform Gauss-Newton method
+    sol = gauss_newton(x0, F, dF, tol, maxit);
+    sol = sol(:,end);
+    x_c = sol(1);
+    y_c = sol(2);
+    %radius can be negative or positive based on the starting point
+    r = abs(sol(3));
+    
+    fprintf('Calculated outputs:\n');
+    fprintf('x_c = %.4f  (size: %s)\n', x_c, mat2str(size(x_c)));
+    fprintf('y_c = %.4f  (size: %s)\n', y_c, mat2str(size(y_c)));
+    fprintf('r   = %.4f  (size: %s)\n', r, mat2str(size(r)));
+    
+        
+    
+    % plot data points and computed circle
+    figure();
+    x_circ = x_c + r * cos(linspace(0,2*pi,100));
+    y_circ = y_c + r * sin(linspace(0,2*pi,100));
+    plot(x,y,'*red');
+    hold on;
+    plot(x_circ,y_circ,'blue');
+    xlim([x_c-r-0.5, x_c+r+0.5]);
+    ylim([y_c-r-0.5, y_c+r+0.5]);
+    legend('data points', 'minimizing circle', 'Interpreter', 'latex');
+    
+    % plot ||F(x_c,y_c,t)||_2 with varying radius t
+    figure();
+    R = -2*abs(r):0.01:2*abs(r);
+    F_r = zeros(length(R),1);
+    k = 1;
+    for t = R
+        F_r(k) = norm(F([x_c, y_c, t]));
+        k = k+1;
+    end
+    plot(R, F_r);
+    ylabel('$$\|F(x_c,y_c,\tilde{r})\|_2$$', 'Interpreter', 'latex', 'FontSize', 14);
+    xlabel('radii $$\tilde{r}$$', 'Interpreter', 'latex', 'FontSize', 14);
+    xline(r, '--r');
+    xline(-r, '--r');
+    text(-abs(r)+0.2, max(F_r)/2, '$$-\vert r\vert$$', 'Interpreter', 'latex', 'Color', 'red');
+    text(abs(r)+0.2, max(F_r)/2, '$$\vert r\vert$$', 'Interpreter', 'latex', 'Color', 'red');
+       
+    pause(4);
+    i=i+1;
 
-% plot ||F(x_c,y_c,t)||_2 with varying radius t
-figure();
-R = -2*abs(r):0.01:2*abs(r);
-F_r = zeros(length(R),1);
-k = 1;
-for t = R
-    F_r(k) = norm(F([x_c, y_c, t]));
-    k = k+1;
 end
-plot(R, F_r);
-ylabel('$$\|F(x_c,y_c,\tilde{r})\|_2$$', 'Interpreter', 'latex', 'FontSize', 14);
-xlabel('radii $$\tilde{r}$$', 'Interpreter', 'latex', 'FontSize', 14);
-xline(r, '--r');
-xline(-r, '--r');
-text(-abs(r)+0.2, max(F_r)/2, '$$-\vert r\vert$$', 'Interpreter', 'latex', 'Color', 'red');
-text(abs(r)+0.2, max(F_r)/2, '$$\vert r\vert$$', 'Interpreter', 'latex', 'Color', 'red');
+
+
+
+function X = gauss_newton(x0, F, dF, tol, maxit)
+% GAUSS_NEWTON  Nonlinear least-squares solution via Gauss–Newton method
+% ----------------------------------------------------------------
+% Inputs:
+%   x0    initial guess for parameter vector
+%   F     function handle returning residual vector
+%   dF    function handle returning Jacobian matrix
+%   tol   tolerance for stopping criterion
+%   maxit maximum number of iterations
+%
+% Output:
+%   X     matrix whose columns are the iterates
+
+    z = x0(:);
+    X = z;
+    
+    fprintf('\n--- Starting Gauss–Newton iterations ---\n');
+    fprintf('Initial guess: z0 = [%8.4f, %8.4f, %8.4f]\n', z(1), z(2), z(3));
+    fprintf('Tolerance (tol): %.2e | Max iterations: %d\n\n', tol, maxit);
+
+    for k = 1:maxit
+        r = F(z);     % residual vector (m×1)
+        J = dF(z);    % Jacobian matrix (m×n)
+
+        % Solve normal equations (least-squares step)
+        %s = -J \ r;
+        s = - (J' * J) \ (J' * r);
+
+        norm_r = norm(r);
+        norm_s = norm(s);
+
+        fprintf('Iter %2d:  z = [%8.4f, %8.4f, %8.4f]  |s| = %.3e  |r| = %.3e\n', ...
+                 k, z(1), z(2), z(3), norm_s, norm_r);
+
+
+        % Update iterate
+        z = z + s;
+        X(:,end+1) = z;
+
+        % Check convergence
+        if norm(s) <= tol * (1 + norm(z))
+            fprintf('Converged at iteration %d\n', k);
+            fprintf('Final estimate: z = [%8.4f, %8.4f, %8.4f]\n', z(1), z(2), z(3));
+            fprintf('----------------------------------------------------------\n\n');
+            break;
+        end
+      
+        if k == maxit
+            fprintf('Max iterations (%d) reached without convergence.\n', maxit);
+            fprintf('Last estimate: z = [%8.4f, %8.4f, %8.4f]\n', z(1), z(2), z(3));
+            fprintf('----------------------------------------------------------\n\n');
+        end
+    end
+end

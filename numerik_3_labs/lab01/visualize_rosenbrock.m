@@ -1,6 +1,8 @@
-clear
-close all
-clc
+function visualization_rosebrock
+
+clear;
+close all;
+clc;
 
 figure('Position', [100,100,1500,700]);
 sgtitle('\underline{Rosenbrock function}', 'Interpreter', 'latex', 'FontSize', 18);
@@ -33,3 +35,4 @@ xlabel('$$x$$', 'Interpreter', 'latex', 'FontSize', 14);
 ylabel('$$y$$', 'Interpreter', 'latex', 'FontSize', 14);
 legend('global and local minimum', 'Interpreter', 'latex', 'Location', 'northeast', 'FontSize', 14);
 title('Contour line plot', 'Interpreter', 'latex', 'FontSize', 14);
+end

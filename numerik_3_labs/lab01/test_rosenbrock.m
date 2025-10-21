@@ -2,10 +2,14 @@ clear
 close all
 clc
 
+% F y J=F' para r(x,y)=||F||_2 con F=[1-x; 10(y-x^2); sqrt(x^2+y^2)]
+F  = @(x) [ 1 - x(1);
+            10*(x(2) - x(1)^2);
+            sqrt(x(1)^2 + x(2)^2) ];
+dF = @(x) [ -1,                 0;
+            -20*x(1),          10;
+             x(1)/sqrt(x(1)^2 + x(2)^2),  x(2)/sqrt(x(1)^2 + x(2)^2) ];
 
-% F and dF
-F = @(x) ...
-dF = @(x) ...
 
 % apply Gauss-Newton method
 X = gauss_newton([-3;4], F, dF, 10^(-6), 100);
@@ -40,7 +44,7 @@ hold on;
 plot(X(1,:),X(2,:),'--.r','MarkerSize',15);
 xlabel('$$x$$', 'Interpreter', 'latex', 'FontSize', 14);
 ylabel('$$y$$', 'Interpreter', 'latex', 'FontSize', 14);
-caxis([0,110]);
+%caxis([0,110]);
 colorbar();
 rectangle('Position', [0.3-0.4/5,-0.1-0.4/5,0.4+2*0.4/5,0.4+2*0.4/5], 'EdgeColor','black', 'LineStyle',':','LineWidth',1.5);
 plot(nan, nan, 'Color','black', 'LineStyle',':','LineWidth',1.5, 'DisplayName', 'zoom in');
@@ -60,7 +64,7 @@ xlabel('$$x$$', 'Interpreter', 'latex', 'FontSize', 14);
 ylabel('$$y$$', 'Interpreter', 'latex', 'FontSize', 14);
 xlim([0.3,0.7]);
 ylim([-0.1,0.3]);
-caxis([0,110]);
+%caxis([0,110]);
 colorbar();
 legend('iterates', 'zoom zoom in', 'Interpreter', 'latex', 'Location', 'southeast', 'FontSize', 12);
 title('Contour line plot - zoom in', 'Interpreter', 'latex', 'FontSize', 14);
@@ -76,7 +80,7 @@ xlabel('$$x$$', 'Interpreter', 'latex', 'FontSize', 14);
 ylabel('$$y$$', 'Interpreter', 'latex', 'FontSize', 14);
 xlim([0.4,0.45]);
 ylim([0.14,0.19]);
-caxis([0,110]);
+%caxis([0,110]);
 colorbar();
 legend(p4,'iterates', 'Interpreter', 'latex', 'Location', 'southeast', 'FontSize', 12);
 title('Contour line plot - zoom zoom in', 'Interpreter', 'latex', 'FontSize', 14);
